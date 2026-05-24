@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#6C63FF">
+<title>错题猎手 🎯</title>
+<style>
+/* ===== 变量 ===== */
+:root {
+  --primary: #6C63FF;
+  --primary-light: #8B85FF;
+  --primary-dark: #554CED;
+  --secondary: #FF6584;
+  --accent: #FFD166;
+  --success: #06D6A0;
+  --bg: #F0F2FF;
+  --card: #FFFFFF;
+  --text: #2D2D3F;
+  --text-secondary: #6E6E85;
+  --border: #E8E8F0;
+  --shadow: 0 2px 12px rgba(108,99,255,0.10);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --nav-height: 64px;
+  --danger: #EF476F;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-bottom: var(--nav-height);
+}
+
+/* ===== 页面容器 ===== */
+.page { display:none; padding:16px; max-width:600px; margin:0 auto 80px; }
+.page.active { display:block; animation: fadeIn .25s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* ===== 底部导航 ===== */
+.bottom-nav {
+  position:fixed; bottom:0; left:0; right:0; height:var(--nav-height);
+  background:rgba(255,255,255,0.92); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-around;
+  z-index:100; padding-bottom:env(safe-area-inset-bottom);
+  max-width:600px; margin:0 auto;
+}
+.nav-item {
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:6px 12px; border:none; background:none; font-size:10px;
+  color:var(--text-secondary); cursor:pointer; transition:color .2s;
+}
+.nav-item.active { color:var(--primary); }
+.nav-item .icon { font-size:22px; line-height:1; }
+.nav-item .label { font-weight:500; }
+
+/* ===== 按钮 ===== */
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  padding:12px 24px; border:none; border-radius:var(--radius-sm);
+  font-size:15px; font-weight:600; cursor:pointer;
+  transition:all .2s; touch-action:manipulation;
+}
+.btn:active { transform:scale(0.96); }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-dark); }
+.btn-secondary { background:var(--secondary); color:#fff; }
+.btn-success { background:var(--success); color:#fff; }
+.btn-outline { background:transparent; border:2px solid var(--primary); color:var(--primary); }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-block { width:100%; }
+.btn-sm { padding:8px 16px; font-size:13px; }
+.btn-lg { padding:14px 28px; font-size:17px; }
+
+/* ===== 卡片 ===== */
+.card {
+  background:var(--card); border-radius:var(--radius);
+  padding:16px; box-shadow:var(--shadow); margin-bottom:12px;
+}
+
+/* ===== 录入区 ===== */
+.upload-area {
+  border:2px dashed var(--border); border-radius:var(--radius);
+  padding:40px 20px; text-align:center; transition:all .2s;
+  cursor:pointer; position:relative; overflow:hidden;
+  background: #FAFAFF;
+}
+.upload-area.has-image { border-style:solid; border-color:transparent; padding:0; }
+.upload-area .placeholder-icon { font-size:48px; display:block; margin-bottom:8px; }
+.upload-area .placeholder-text { color:var(--text-secondary); font-size:14px; }
+.upload-area img { width:100%; display:block; border-radius:var(--radius-sm); }
+.upload-area input[type=file] { display:none; }
+.image-preview-wrap { position:relative; }
+.image-preview-wrap img { width:100%; border-radius:var(--radius-sm); display:block; }
+.annotation-canvas {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  border-radius:var(--radius-sm); touch-action:none; cursor:crosshair;
+}
+
+/* ===== 标注工具栏 ===== */
+.annot-toolbar {
+  display:flex; gap:6px; flex-wrap:wrap; align-items:center;
+  padding:8px 0; margin-bottom:4px;
+}
+.annot-toolbar .tool-btn {
+  width:36px; height:36px; border-radius:8px; border:2px solid transparent;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; cursor:pointer; background:var(--bg); transition:all .15s;
+}
+.annot-toolbar .tool-btn.active { border-color:var(--primary); background:var(--primary); color:#fff; }
+.annot-toolbar .color-dot {
+  width:24px; height:24px; border-radius:50%; border:2px solid transparent; cursor:pointer; display:inline-block;
+}
+.annot-toolbar .color-dot.active { border-color:var(--text); transform:scale(1.15); }
+
+/* ===== 表单 ===== */
+.form-group { margin-bottom:14px; }
+.form-label { display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
+.form-input, .form-select, .form-textarea {
+  width:100%; padding:10px 14px; border:2px solid var(--border);
+  border-radius:var(--radius-sm); font-size:15px; background:var(--bg);
+  transition:border-color .2s; font-family:inherit;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { outline:none; border-color:var(--primary); }
+.form-textarea { resize:vertical; min-height:60px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+/* ===== 标签 ===== */
+.tag {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:4px 10px; border-radius:20px; font-size:12px; font-weight:500;
+}
+.tag-subject { background:#E8E5FF; color:var(--primary); }
+.tag-error { background:#FFE5EE; color:var(--secondary); }
+.tag-mastery { background:#E5FFF5; color:#06A87E; }
+.tag-pending { background:#FFF8E5; color:#D6A300; }
+
+/* ===== 错题卡片 ===== */
+.error-card {
+  background:var(--card); border-radius:var(--radius);
+  overflow:hidden; box-shadow:var(--shadow); margin-bottom:12px;
+}
+.error-card .card-img {
+  width:100%; max-height:200px; object-fit:cover;
+  border-bottom:1px solid var(--border); cursor:pointer;
+}
+.error-card .card-body { padding:12px 16px; }
+.error-card .card-header {
+  display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;
+}
+.error-card .card-subject { font-size:13px; }
+.error-card .card-chapter { font-size:12px; color:var(--text-secondary); }
+.error-card .card-actions { display:flex; gap:8px; margin-top:10px; }
+
+/* ===== 掌握进度条 ===== */
+.mastery-bar {
+  height:6px; border-radius:3px; background:#E8E8F0;
+  overflow:hidden; margin:6px 0;
+}
+.mastery-bar .fill {
+  height:100%; border-radius:3px; transition:width .5s ease;
+  background:linear-gradient(90deg, #FF6584, #FFD166, #06D6A0);
+}
+
+/* ===== 空状态 ===== */
+.empty-state { text-align:center; padding:60px 20px; }
+.empty-state .emoji { font-size:64px; display:block; margin-bottom:16px; }
+.empty-state .title { font-size:18px; font-weight:600; margin-bottom:8px; }
+.empty-state .desc { font-size:14px; color:var(--text-secondary); }
+
+/* ===== 复习模式 ===== */
+.review-card {
+  background:var(--card); border-radius:var(--radius); 
+  box-shadow:var(--shadow); overflow:hidden; min-height:300px;
+  position:relative; cursor:pointer;
+}
+.review-card img { width:100%; max-height:300px; object-fit:contain; background:#FAFAFF; }
+.review-card .review-meta { padding:16px; }
+.review-card .review-answer { 
+  padding:16px; background:#FFF8E5;
+  border-top:2px dashed var(--accent);
+  display:none;
+}
+.review-card.flipped .review-answer { display:block; }
+.review-actions { display:flex; gap:12px; margin-top:16px; justify-content:center; }
+.review-progress { text-align:center; font-size:13px; color:var(--text-secondary); margin-bottom:12px; }
+
+/* ===== 统计面板 ===== */
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.stat-card {
+  background:var(--card); border-radius:var(--radius); padding:16px; text-align:center;
+  box-shadow:var(--shadow);
+}
+.stat-card .stat-value { font-size:28px; font-weight:700; margin:4px 0; }
+.stat-card .stat-label { font-size:13px; color:var(--text-secondary); }
+.stat-card .stat-emoji { font-size:24px; }
+.stat-chart { margin-top:8px; }
+.chart-bar-row { display:flex; align-items:center; gap:8px; margin:6px 0; }
+.chart-bar-row .label { width:48px; font-size:13px; text-align:right; white-space:nowrap; }
+.chart-bar-row .bar-track { flex:1; height:20px; background:var(--bg); border-radius:10px; overflow:hidden; }
+.chart-bar-row .bar-fill { height:100%; border-radius:10px; transition:width .5s; min-width:4px; }
+.chart-bar-row .value { font-size:12px; color:var(--text-secondary); min-width:30px; }
+
+/* ===== 模态框 ===== */
+.modal-overlay {
+  position:fixed; top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,0.45); z-index:200;
+  display:flex; align-items:center; justify-content:center;
+  padding:20px; animation:fadeIn .15s;
+}
+.modal-content {
+  background:var(--card); border-radius:var(--radius);
+  padding:20px; max-width:90%; width:400px; max-height:80vh; overflow-y:auto;
+  animation:slideUp .2s;
+}
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:none;opacity:1} }
+.modal-title { font-size:17px; font-weight:700; margin-bottom:14px; }
+
+/* ===== 搜索栏 ===== */
+.search-bar {
+  display:flex; gap:8px; margin-bottom:12px;
+}
+.search-bar .form-input { flex:1; }
+.filter-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.filter-chip {
+  padding:6px 14px; border-radius:20px; border:1.5px solid var(--border);
+  background:var(--card); font-size:13px; cursor:pointer; transition:all .15s;
+}
+.filter-chip.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+/* ===== 全屏图片查看 ===== */
+.image-viewer {
+  position:fixed; top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,0.92); z-index:300;
+  display:flex; align-items:center; justify-content:center;
+  padding:20px; cursor:pointer;
+}
+.image-viewer img { max-width:100%; max-height:100%; object-fit:contain; }
+
+/* ===== Toast ===== */
+.toast {
+  position:fixed; top:20px; left:50%; transform:translateX(-50%);
+  background:rgba(45,45,63,0.92); color:#fff; padding:12px 20px;
+  border-radius:var(--radius-sm); font-size:14px; z-index:999;
+  animation:slideDown .3s; max-width:90%;
+}
+@keyframes slideDown { from{transform:translateX(-50%) translateY(-20px);opacity:0} to{transform:translateX(-50%) translateY(0);opacity:1} }
+
+/* ===== 实用 ===== */
+.mt8 { margin-top:8px; }
+.mt12 { margin-top:12px; }
+.mt16 { margin-top:16px; }
+.mb12 { margin-bottom:12px; }
+.text-center { text-align:center; }
+.flex { display:flex; }
+.flex-center { display:flex; align-items:center; justify-content:center; }
+.gap8 { gap:8px; }
+.gap12 { gap:12px; }
+</style>
+</head>
+<body>
+
+<!-- ===== 底部导航 ===== -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="nav-item active" data-page="input" onclick="app.nav('input')">
+    <span class="icon">📷</span><span class="label">录入</span>
+  </button>
+  <button class="nav-item" data-page="list" onclick="app.nav('list')">
+    <span class="icon">📋</span><span class="label">错题</span>
+  </button>
+  <button class="nav-item" data-page="review" onclick="app.nav('review')">
+    <span class="icon">🔁</span><span class="label">复习</span>
+  </button>
+  <button class="nav-item" data-page="stats" onclick="app.nav('stats')">
+    <span class="icon">📊</span><span class="label">统计</span>
+  </button>
+</nav>
+
+<!-- ===== 录入页 ===== -->
+<div class="page active" id="pageInput">
+  <h2 style="margin:8px 0 16px;font-size:20px;">📸 录入错题</h2>
+
+  <div id="uploadArea" class="upload-area" onclick="document.getElementById('imageInput').click()">
+    <span class="placeholder-icon">🖼️</span>
+    <span class="placeholder-text">点击添加错题图片</span>
+    <span style="display:block;font-size:12px;color:var(--text-secondary);margin-top:6px;">支持相册选择或拍照</span>
+    <input type="file" id="imageInput" accept="image/*" onchange="app.handleImageUpload(event)">
+  </div>
+
+  <div id="imagePreviewArea" class="image-preview-wrap" style="display:none;">
+    <canvas id="annotCanvas" class="annotation-canvas"></canvas>
+    <img id="previewImage" style="width:100%;border-radius:var(--radius-sm);display:block;">
+    <div class="annot-toolbar">
+      <button class="tool-btn active" data-tool="pen" onclick="app.setAnnotTool('pen')">✏️</button>
+      <button class="tool-btn" data-tool="circle" onclick="app.setAnnotTool('circle')">⭕</button>
+      <button class="tool-btn" data-tool="arrow" onclick="app.setAnnotTool('arrow')">➡️</button>
+      <button class="tool-btn" data-tool="text" onclick="app.setAnnotTool('text')">🔤</button>
+      <button class="tool-btn" data-tool="eraser" onclick="app.setAnnotTool('eraser')">🧹</button>
+      <span style="color:var(--border);margin:0 4px;">|</span>
+      <span class="color-dot active" data-color="#FF0000" style="background:#FF0000" onclick="app.setAnnotColor('#FF0000',this)"></span>
+      <span class="color-dot" data-color="#FFD166" style="background:#FFD166" onclick="app.setAnnotColor('#FFD166',this)"></span>
+      <span class="color-dot" data-color="#06D6A0" style="background:#06D6A0" onclick="app.setAnnotColor('#06D6A0',this)"></span>
+      <span class="color-dot" data-color="#6C63FF" style="background:#6C63FF" onclick="app.setAnnotColor('#6C63FF',this)"></span>
+      <span class="color-dot" data-color="#FFFFFF" style="background:#FFFFFF;border-color:#ccc" onclick="app.setAnnotColor('#FFFFFF',this)"></span>
+      <span style="color:var(--border);margin:0 4px;">|</span>
+      <button class="tool-btn" onclick="app.undoAnnot()">↩️</button>
+      <button class="tool-btn" onclick="app.clearAnnot()">🗑️</button>
+    </div>
+  </div>
+
+  <div class="card mt12">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">📚 科目</label>
+        <select class="form-select" id="inputSubject">
+          <option value="数学">数学</option>
+          <option value="物理">物理</option>
+          <option value="化学">化学</option>
+          <option value="英语">英语</option>
+          <option value="语文">语文</option>
+          <option value="生物">生物</option>
+          <option value="历史">历史</option>
+          <option value="地理">地理</option>
+          <option value="政治">政治</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">📖 错因</label>
+        <select class="form-select" id="inputErrorType">
+          <option value="概念不清">概念不清</option>
+          <option value="计算错误">计算错误</option>
+          <option value="审题失误">审题失误</option>
+          <option value="公式记错">公式记错</option>
+          <option value="思路偏差">思路偏差</option>
+          <option value="粗心大意">粗心大意</option>
+          <option value="知识点混淆">知识点混淆</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">📂 章节</label>
+      <input class="form-input" id="inputChapter" placeholder="如：一元二次方程">
+    </div>
+    <div class="form-group">
+      <label class="form-label">💡 正确解析 / 笔记</label>
+      <textarea class="form-textarea" id="inputNotes" placeholder="写下正确解法、思路、注意点…" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">🎯 掌握程度</label>
+      <input type="range" id="inputMastery" min="0" max="100" value="30"
+             style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('masteryVal').textContent=this.value+'%'">
+      <div style="text-align:right;font-size:13px;color:var(--text-secondary);"><span id="masteryVal">30%</span></div>
+    </div>
+    <button class="btn btn-primary btn-block btn-lg mt8" onclick="app.saveError()">
+      ✅ 保存错题
+    </button>
+  </div>
+</div>
+
+<!-- ===== 错题列表页 ===== -->
+<div class="page" id="pageList">
+  <h2 style="margin:8px 0 16px;font-size:20px;">📋 错题本</h2>
+  <div class="search-bar">
+    <input class="form-input" id="listSearch" placeholder="🔍 搜索科目/章节/关键词…" oninput="app.renderList()">
+    <button class="btn btn-sm btn-outline" onclick="app.showFilterModal()">筛选</button>
+  </div>
+  <div id="listContainer"></div>
+</div>
+
+<!-- ===== 复习页 ===== -->
+<div class="page" id="pageReview">
+  <h2 style="margin:8px 0 16px;font-size:20px;">🔁 复习模式</h2>
+  <div id="reviewContainer">
+    <div class="empty-state">
+      <span class="emoji">🎯</span>
+      <div class="title">开始每日复习</div>
+      <div class="desc">从错题中随机抽题，巩固薄弱点</div>
+      <button class="btn btn-primary btn-lg mt16" onclick="app.startReview()">
+        🔄 开始
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 统计页 ===== -->
+<div class="page" id="pageStats">
+  <h2 style="margin:8px 0 16px;font-size:20px;">📊 学习统计</h2>
+  <div id="statsContainer"></div>
+</div>
+
+<script>
+// ===== 常量 =====
+const SUBJECTS = ['数学','物理','化学','英语','语文','生物','历史','地理','政治'];
+const ERROR_TYPES = ['概念不清','计算错误','审题失误','公式记错','思路偏差','粗心大意','知识点混淆','其他'];
+const COLORS = ['#FF0000','#FFD166','#06D6A0','#6C63FF','#FFFFFF'];
+
+// ===== IndexedDB =====
+const DB_NAME = 'WrongAnswerHunter';
+const DB_VER = 2;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('errors')) {
+        const store = db.createObjectStore('errors', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('subject', 'subject', { unique: false });
+        store.createIndex('createdAt', 'createdAt', { unique: false });
+        store.createIndex('mastery', 'mastery', { unique: false });
+      }
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = e => reject(e.target.error);
+  });
+}
+
+async function dbQuery(storeName, mode, callback) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, mode);
+    const store = tx.objectStore(storeName);
+    const result = callback(store);
+    tx.oncomplete = () => resolve(result);
+    tx.onerror = e => reject(e.target.error);
+  });
+}
+
+async function getAllErrors() {
+  return dbQuery('errors', 'readonly', store => {
+    const req = store.getAll();
+    return new Promise(r => { req.onsuccess = () => r(req.result); });
+  });
+}
+
+async function getErrorById(id) {
+  return dbQuery('errors', 'readonly', store => {
+    const req = store.get(id);
+    return new Promise(r => { req.onsuccess = () => r(req.result); });
+  });
+}
+
+async function saveError(data) {
+  return dbQuery('errors', 'readwrite', store => {
+    if (data.id) {
+      const req = store.put(data);
+      return new Promise(r => { req.onsuccess = () => r(req.result); });
+    } else {
+      const req = store.add(data);
+      return new Promise(r => { req.onsuccess = () => r(req.result); });
+    }
+  });
+}
+
+async function deleteError(id) {
+  return dbQuery('errors', 'readwrite', store => {
+    store.delete(id);
+    return id;
+  });
+}
+
+// ===== Toast =====
+function showToast(msg, duration=2000) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), duration);
+}
+
+// ===== 主应用 =====
+const app = {
+  currentImageData: null,
+  annotTool: 'pen',
+  annotColor: '#FF0000',
+  annotHistory: [],
+  canvasCtx: null,
+  imgNaturalW: 0,
+  imgNaturalH: 0,
+  isDrawing: false,
+  lastX: 0, lastY: 0,
+  textInputActive: false,
+
+  // ---- 导航 ----
+  nav(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1)).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+    if (page === 'list') this.renderList();
+    if (page === 'stats') this.renderStats();
+  },
+
+  // ---- 图片上传 ----
+  handleImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      this.currentImageData = ev.target.result;
+      this.showImagePreview(this.currentImageData);
+    };
+    reader.readAsDataURL(file);
+  },
+
+  showImagePreview(src) {
+    const uploadArea = document.getElementById('uploadArea');
+    const previewArea = document.getElementById('imagePreviewArea');
+    const img = document.getElementById('previewImage');
+    uploadArea.style.display = 'none';
+    previewArea.style.display = 'block';
+    img.onload = () => {
+      this.imgNaturalW = img.naturalWidth;
+      this.imgNaturalH = img.naturalHeight;
+      this.setupCanvas(img);
+    };
+    img.src = src;
+  },
+
+  setupCanvas(img) {
+    const canvas = document.getElementById('annotCanvas');
+    const ctx = canvas.getContext('2d');
+    this.canvasCtx = ctx;
+    const rect = img.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    this.annotHistory = [];
+    this.clearAnnot();
+    this.bindCanvasEvents(canvas, img);
+  },
+
+  bindCanvasEvents(canvas, img) {
+    const getPos = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    };
+
+    const startDraw = (e) => {
+      if (this.textInputActive) return;
+      e.preventDefault();
+      this.saveState();
+      const pos = getPos(e);
+      this.isDrawing = true;
+      this.lastX = pos.x; this.lastY = pos.y;
+      if (this.annotTool === 'text') {
+        this.placeText(pos.x, pos.y);
+        this.isDrawing = false;
+      }
+    };
+
+    const moveDraw = (e) => {
+      if (!this.isDrawing || this.textInputActive) return;
+      e.preventDefault();
+      const pos = getPos(e);
+      const ctx = this.canvasCtx;
+      const w = canvas.width, h = canvas.height;
+
+      if (this.annotTool === 'pen' || this.annotTool === 'eraser') {
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, this.annotTool === 'eraser' ? 8 : 3, 0, Math.PI * 2);
+        ctx.fillStyle = this.annotTool === 'eraser' ? 'transparent' : this.annotColor;
+        ctx.fill();
+      } else if (this.annotTool === 'circle') {
+        this.restoreState();
+        ctx.beginPath();
+        const rx = Math.abs(pos.x - this.lastX) / 2, ry = Math.abs(pos.y - this.lastY) / 2;
+        const cx = (pos.x + this.lastX) / 2, cy = (pos.y + this.lastY) / 2;
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = this.annotColor;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      } else if (this.annotTool === 'arrow') {
+        this.restoreState();
+        const dx = pos.x - this.lastX, dy = pos.y - this.lastY;
+        const angle = Math.atan2(dy, dx);
+        const len = Math.sqrt(dx*dx + dy*dy);
+        if (len < 5) return;
+        ctx.beginPath();
+        ctx.moveTo(this.lastX, this.lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.strokeStyle = this.annotColor;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        const arrowSize = 12;
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        ctx.lineTo(pos.x - arrowSize * Math.cos(angle - Math.PI/6), pos.y - arrowSize * Math.sin(angle - Math.PI/6));
+        ctx.lineTo(pos.x - arrowSize * Math.cos(angle + Math.PI/6), pos.y - arrowSize * Math.sin(angle + Math.PI/6));
+        ctx.closePath();
+        ctx.fillStyle = this.annotColor;
+        ctx.fill();
+      }
+    };
+
+    const endDraw = (e) => {
+      if (!this.isDrawing) return;
+      this.isDrawing = false;
+    };
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', moveDraw, { passive: false });
+    canvas.addEventListener('touchend', endDraw);
+  },
+
+  saveState() {
+    if (!this.canvasCtx) return;
+    this.annotHistory.push(this.canvasCtx.canvas.toDataURL());
+    if (this.annotHistory.length > 20) this.annotHistory.shift();
+  },
+
+  restoreState() {
+    if (!this.canvasCtx || this.annotHistory.length === 0) return;
+    const img = new Image();
+    img.onload = () => this.canvasCtx.drawImage(img, 0, 0);
+    img.src = this.annotHistory[this.annotHistory.length - 1];
+  },
+
+  undoAnnot() {
+    if (this.annotHistory.length < 2) {
+      this.annotHistory = [];
+      this.clearAnnot();
+      return;
+    }
+    this.annotHistory.pop();
+    const img = new Image();
+    img.onload = () => {
+      this.canvasCtx.clearRect(0, 0, this.canvasCtx.canvas.width, this.canvasCtx.canvas.height);
+      this.canvasCtx.drawImage(img, 0, 0);
+    };
+    img.src = this.annotHistory[this.annotHistory.length - 1];
+  },
+
+  clearAnnot() {
+    if (!this.canvasCtx) return;
+    this.canvasCtx.clearRect(0, 0, this.canvasCtx.canvas.width, this.canvasCtx.canvas.height);
+    this.annotHistory = [];
+    this.saveState();
+  },
+
+  placeText(x, y) {
+    const ctx = this.canvasCtx;
+    const text = prompt('输入标注文字：', '错题点');
+    if (!text) return;
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillStyle = this.annotColor;
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 3;
+    ctx.strokeText(text, x, y);
+    ctx.fillText(text, x, y);
+  },
+
+  setAnnotTool(tool) {
+    this.annotTool = tool;
+    document.querySelectorAll('.annot-toolbar .tool-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.annot-toolbar .tool-btn[data-tool="${tool}"]`).classList.add('active');
+  },
+
+  setAnnotColor(color, el) {
+    this.annotColor = color;
+    document.querySelectorAll('.annot-toolbar .color-dot').forEach(d => d.classList.remove('active'));
+    if (el) el.classList.add('active');
+  },
+
+  getAnnotImageData() {
+    if (!this.canvasCtx) return null;
+    const canvas = this.canvasCtx.canvas;
+    return canvas.toDataURL('image/png');
+  },
+
+  // ---- 保存错题 ----
+  async saveError() {
+    if (!this.currentImageData) {
+      showToast('请先添加错题图片 📸');
+      return;
+    }
+    const subject = document.getElementById('inputSubject').value;
+    const errorType = document.getElementById('inputErrorType').value;
+    const chapter = document.getElementById('inputChapter').value.trim();
+    const notes = document.getElementById('inputNotes').value.trim();
+    const mastery = parseInt(document.getElementById('inputMastery').value);
+
+    const annotData = this.getAnnotImageData();
+
+    const data = {
+      subject,
+      errorType,
+      chapter: chapter || '未分类',
+      notes,
+      mastery,
+      imageData: this.currentImageData,
+      annotData: annotData,
+      reviewCount: 0,
+      lastReviewed: null,
+      reviewHistory: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+
+    try {
+      const id = await saveError(data);
+      showToast(`✅ 错题已保存！第 ${id} 题`);
+      this.resetForm();
+    } catch(e) {
+      showToast('保存失败，请重试 ❌');
+      console.error(e);
+    }
+  },
+
+  resetForm() {
+    this.currentImageData = null;
+    document.getElementById('uploadArea').style.display = 'block';
+    document.getElementById('imagePreviewArea').style.display = 'none';
+    document.getElementById('previewImage').src = '';
+    document.getElementById('inputChapter').value = '';
+    document.getElementById('inputNotes').value = '';
+    document.getElementById('inputMastery').value = 30;
+    document.getElementById('masteryVal').textContent = '30%';
+    document.getElementById('imageInput').value = '';
+    this.canvasCtx = null;
+  },
+
+  // ---- 错题列表 ----
+  async renderList() {
+    const container = document.getElementById('listContainer');
+    const searchTerm = document.getElementById('listSearch').value.toLowerCase();
+    const filterSubject = this._filterSubject || '';
+    const filterError = this._filterError || '';
+
+    const errors = await getAllErrors();
+    let filtered = errors.sort((a,b) => b.createdAt - a.createdAt);
+
+    if (searchTerm) {
+      filtered = filtered.filter(e =>
+        e.subject.includes(searchTerm) ||
+        e.chapter.includes(searchTerm) ||
+        e.notes.toLowerCase().includes(searchTerm) ||
+        e.errorType.includes(searchTerm)
+      );
+    }
+    if (filterSubject) filtered = filtered.filter(e => e.subject === filterSubject);
+    if (filterError) filtered = filtered.filter(e => e.errorType === filterError);
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <span class="emoji">🔍</span>
+          <div class="title">暂无错题</div>
+          <div class="desc">去录入页添加第一道错题吧！</div>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = filtered.map(e => `
+      <div class="error-card">
+        <img class="card-img" src="${e.imageData}" onclick="app.viewImage('${e.imageData}')" alt="错题图片">
+        <div class="card-body">
+          <div class="card-header">
+            <div>
+              <span class="tag tag-subject">${e.subject}</span>
+              <span class="tag tag-error">${e.errorType}</span>
+              <span class="tag ${e.mastery >= 80 ? 'tag-mastery' : 'tag-pending'}">${e.mastery}%</span>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="app.confirmDelete(${e.id})" style="padding:6px 10px;">🗑️</button>
+          </div>
+          <div style="font-size:13px;color:var(--text-secondary);">📂 ${e.chapter}</div>
+          <div class="mastery-bar"><div class="fill" style="width:${e.mastery}%"></div></div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">
+            📅 ${new Date(e.createdAt).toLocaleDateString('zh-CN')} · 复习${e.reviewCount}次
+          </div>
+          ${e.notes ? `<div style="font-size:13px;margin-top:6px;padding:8px;background:var(--bg);border-radius:8px;">💡 ${e.notes}</div>` : ''}
+          <div class="card-actions">
+            <button class="btn btn-sm btn-outline" onclick="app.editError(${e.id})">✏️ 编辑</button>
+            <button class="btn btn-sm ${e.mastery >= 80 ? 'btn-success' : 'btn-secondary'}"
+                    onclick="app.updateMastery(${e.id}, ${Math.min(e.mastery+20, 100)})">
+              ${e.mastery >= 80 ? '✅ 已掌握' : '📈 +20%'}
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  viewImage(src) {
+    const overlay = document.createElement('div');
+    overlay.className = 'image-viewer';
+    overlay.innerHTML = `<img src="${src}">`;
+    overlay.onclick = () => overlay.remove();
+    document.body.appendChild(overlay);
+  },
+
+  async confirmDelete(id) {
+    if (!confirm('确定删除这条错题？')) return;
+    await deleteError(id);
+    showToast('已删除');
+    this.renderList();
+  },
+
+  async editError(id) {
+    const item = await getErrorById(id);
+    if (!item) { showToast('未找到该错题'); return; }
+    const notes = prompt('修改解析笔记：', item.notes || '');
+    if (notes === null) return;
+    item.notes = notes.trim();
+    item.updatedAt = Date.now();
+    await saveError(item);
+    showToast('已更新');
+    this.renderList();
+  },
+
+  async updateMastery(id, val) {
+    const item = await getErrorById(id);
+    if (!item) return;
+    item.mastery = val;
+    item.reviewCount = (item.reviewCount || 0) + 1;
+    item.lastReviewed = Date.now();
+    item.reviewHistory.push({ date: Date.now(), mastery: val });
+    item.updatedAt = Date.now();
+    await saveError(item);
+    showToast(`掌握度 ${val}% ${val >= 80 ? '🎉' : '💪'}`);
+    this.renderList();
+  },
+
+  // ---- 筛选 ----
+  showFilterModal() {
+    const subjects = ['全部', ...SUBJECTS];
+    const errors = ['全部', ...ERROR_TYPES];
+    const currentSubject = this._filterSubject || '';
+    const currentError = this._filterError || '';
+
+    const html = `
+      <div class="modal-overlay" onclick="if(event.target===this)this.remove()">
+        <div class="modal-content">
+          <div class="modal-title">🔍 筛选条件</div>
+          <div class="form-group">
+            <label class="form-label">科目</label>
+            <div class="filter-chips">
+              ${subjects.map(s => `<span class="filter-chip ${(s === '全部' && !currentSubject) || s === currentSubject ? 'active' : ''}" onclick="app.applyFilter('subject', '${s === '全部' ? '' : s}')">${s}</span>`).join('')}
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">错因</label>
+            <div class="filter-chips">
+              ${errors.map(e => `<span class="filter-chip ${(e === '全部' && !currentError) || e === currentError ? 'active' : ''}" onclick="app.applyFilter('error', '${e === '全部' ? '' : e}')">${e}</span>`).join('')}
+            </div>
+          </div>
+          <button class="btn btn-outline btn-block" onclick="app.applyFilter('clear')">清除筛选</button>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+  },
+
+  applyFilter(type, val) {
+    if (type === 'clear') {
+      this._filterSubject = '';
+      this._filterError = '';
+    } else if (type === 'subject') {
+      this._filterSubject = val;
+    } else if (type === 'error') {
+      this._filterError = val;
+    }
+    document.querySelector('.modal-overlay')?.remove();
+    this.renderList();
+  },
+
+  // ---- 复习模式 ----
+  reviewItems: [],
+  reviewIndex: 0,
+  reviewTotal: 0,
+
+  async startReview() {
+    const errors = await getAllErrors();
+    const pending = errors.filter(e => e.mastery < 80);
+    if (pending.length === 0) {
+      document.getElementById('reviewContainer').innerHTML = `
+        <div class="empty-state">
+          <span class="emoji">🎉</span>
+          <div class="title">太棒了！</div>
+          <div class="desc">所有错题都已掌握，继续加油！</div>
+          <button class="btn btn-primary mt16" onclick="app.startReviewFull()">🔄 全部回顾</button>
+        </div>`;
+      return;
+    }
+    this.startReviewWith(pending);
+  },
+
+  async startReviewFull() {
+    const errors = await getAllErrors();
+    if (errors.length === 0) {
+      showToast('还没有错题，先去录入吧 📸');
+      return;
+    }
+    this.startReviewWith(errors);
+  },
+
+  startReviewWith(items) {
+    this.reviewItems = items.sort(() => Math.random() - 0.5);
+    this.reviewIndex = 0;
+    this.reviewTotal = items.length;
+    this.showReviewCard();
+  },
+
+  showReviewCard() {
+    if (this.reviewIndex >= this.reviewTotal) {
+      document.getElementById('reviewContainer').innerHTML = `
+        <div class="empty-state">
+          <span class="emoji">🎯</span>
+          <div class="title">复习完成！</div>
+          <div class="desc">共复习 ${this.reviewTotal} 道题</div>
+          <button class="btn btn-primary mt16" onclick="app.startReview()">🔄 再来一轮</button>
+        </div>`;
+      return;
+    }
+
+    const item = this.reviewItems[this.reviewIndex];
+    const container = document.getElementById('reviewContainer');
+
+    container.innerHTML = `
+      <div class="review-progress">📌 ${this.reviewIndex + 1} / ${this.reviewTotal}</div>
+      <div class="mastery-bar"><div class="fill" style="width:${(this.reviewIndex/this.reviewTotal)*100}%"></div></div>
+      <div class="review-card" id="reviewCard" onclick="app.flipReview()">
+        <img src="${item.imageData}" alt="错题" onerror="this.style.display='none'">
+        <div class="review-meta">
+          <span class="tag tag-subject">${item.subject}</span>
+          <span class="tag tag-error">${item.errorType}</span>
+          <span class="tag tag-pending">掌握 ${item.mastery}%</span>
+          <div style="margin-top:8px;font-size:13px;color:var(--text-secondary);">📂 ${item.chapter}</div>
+          <div style="margin-top:4px;font-size:12px;color:var(--text-secondary);">👆 点击查看解析</div>
+        </div>
+        <div class="review-answer">
+          <div style="font-weight:600;margin-bottom:6px;">💡 解析 & 笔记</div>
+          <div>${item.notes || '暂无笔记'}</div>
+        </div>
+      </div>
+      <div class="review-actions">
+        <button class="btn btn-danger btn-lg" onclick="event.stopPropagation();app.reviewResult(false)">
+          ❌ 还不会
+        </button>
+        <button class="btn btn-success btn-lg" onclick="event.stopPropagation();app.reviewResult(true)">
+          ✅ 掌握了
+        </button>
+      </div>`;
+  },
+
+  flipReview() {
+    document.getElementById('reviewCard')?.classList.toggle('flipped');
+  },
+
+  async reviewResult(mastered) {
+    const item = this.reviewItems[this.reviewIndex];
+    if (mastered) {
+      item.mastery = Math.min(item.mastery + 15, 100);
+    } else {
+      item.mastery = Math.max(item.mastery - 5, 0);
+    }
+    item.reviewCount = (item.reviewCount || 0) + 1;
+    item.lastReviewed = Date.now();
+    item.reviewHistory = item.reviewHistory || [];
+    item.reviewHistory.push({ date: Date.now(), mastery: item.mastery });
+    item.updatedAt = Date.now();
+    await saveError(item);
+
+    this.reviewIndex++;
+    setTimeout(() => this.showReviewCard(), 200);
+  },
+
+  // ---- 统计面板 ----
+  async renderStats() {
+    const container = document.getElementById('statsContainer');
+    const errors = await getAllErrors();
+    if (errors.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <span class="emoji">📊</span>
+          <div class="title">暂无数据</div>
+          <div class="desc">录入错题后统计信息会自动生成</div>
+        </div>`;
+      return;
+    }
+
+    const total = errors.length;
+    const mastered = errors.filter(e => e.mastery >= 80).length;
+    const masteredRate = total ? Math.round(mastered / total * 100) : 0;
+    const avgMastery = Math.round(errors.reduce((s,e) => s+e.mastery, 0) / total);
+    const reviewed = errors.filter(e => e.reviewCount > 0).length;
+
+    // 各科目统计
+    const subjectStats = {};
+    errors.forEach(e => {
+      if (!subjectStats[e.subject]) subjectStats[e.subject] = { total: 0, mastered: 0, sumMastery: 0 };
+      subjectStats[e.subject].total++;
+      subjectStats[e.subject].sumMastery += e.mastery;
+      if (e.mastery >= 80) subjectStats[e.subject].mastered++;
+    });
+    const subjectEntries = Object.entries(subjectStats).sort((a,b) => b[1].total - a[1].total);
+
+    // 错因分布
+    const errorStats = {};
+    errors.forEach(e => {
+      if (!errorStats[e.errorType]) errorStats[e.errorType] = 0;
+      errorStats[e.errorType]++;
+    });
+    const errorEntries = Object.entries(errorStats).sort((a,b) => b[1] - a[1]);
+
+    const maxSubject = Math.max(...subjectEntries.map(([,v]) => v.total), 1);
+    const maxError = Math.max(...errorEntries.map(([,v]) => v), 1);
+
+    const subColors = ['#6C63FF','#FF6584','#06D6A0','#FFD166','#FF8C42','#845EC2','#00C9A7','#FF6F91','#D65DB1'];
+
+    container.innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-emoji">📚</div>
+          <div class="stat-value">${total}</div>
+          <div class="stat-label">总错题</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-emoji">🎓</div>
+          <div class="stat-value">${mastered}</div>
+          <div class="stat-label">已掌握</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-emoji">📈</div>
+          <div class="stat-value">${masteredRate}%</div>
+          <div class="stat-label">掌握率</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-emoji">🔄</div>
+          <div class="stat-value">${reviewed}</div>
+          <div class="stat-label">已复习</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:600;font-size:15px;margin-bottom:10px;">📊 平均掌握度</div>
+        <div style="font-size:36px;font-weight:700;color:${avgMastery >= 70 ? 'var(--success)' : avgMastery >= 40 ? 'var(--accent)' : 'var(--secondary)'}">
+          ${avgMastery}%
+        </div>
+        <div class="mastery-bar" style="margin-top:8px;"><div class="fill" style="width:${avgMastery}%;background:linear-gradient(90deg, #FF6584, #FFD166, #06D6A0);"></div></div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:600;font-size:15px;margin-bottom:10px;">📚 各科目错题数</div>
+        ${subjectEntries.map(([sub, stat], i) => `
+          <div class="chart-bar-row">
+            <span class="label" style="width:auto;min-width:44px;font-weight:500;">${sub}</span>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${Math.round(stat.total/maxSubject*100)}%;background:${subColors[i % subColors.length]}"></div>
+            </div>
+            <span class="value">${stat.total}题 ${stat.total > 0 ? Math.round(stat.mastered/stat.total*100) + '%' : ''}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="card">
+        <div style="font-weight:600;font-size:15px;margin-bottom:10px;">🔍 常见错因</div>
+        ${errorEntries.map(([type, count]) => `
+          <div class="chart-bar-row">
+            <span class="label" style="width:auto;min-width:52px;">${type}</span>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${Math.round(count/maxError*100)}%;background:var(--secondary)"></div>
+            </div>
+            <span class="value">${count}次</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="card">
+        <div style="font-weight:600;font-size:15px;margin-bottom:10px;">💪 学习建议</div>
+        ${this.getSuggestions(errors, subjectEntries)}
+      </div>
+    `;
+  },
+
+  getSuggestions(errors, subjectEntries) {
+    const weak = subjectEntries.filter(([,s]) => s.total > 0 && s.mastered / s.total < 0.5);
+    const unreviewed = errors.filter(e => e.reviewCount === 0).length;
+    let html = '';
+    if (weak.length > 0) {
+      html += `<div style="font-size:14px;margin:6px 0;">⚠️ <strong>${weak.map(([s]) => s).join('、')}</strong> 掌握率不足 50%，需要重点复习</div>`;
+    }
+    if (unreviewed > 0) {
+      html += `<div style="font-size:14px;margin:6px 0;">📌 还有 <strong>${unreviewed}</strong> 道错题从未复习过</div>`;
+    }
+    html += `<div style="font-size:14px;margin:6px 0;color:var(--text-secondary);">
+      ${errors.length > 0 ? '💡 每天复习 3-5 道错题，效果最佳！' : '先去录入错题吧 🎯'}
+    </div>`;
+    return html;
+  }
+};
+
+// ---- 窗口调整时重置canvas ----
+window.addEventListener('resize', () => {
+  const previewArea = document.getElementById('imagePreviewArea');
+  if (previewArea.style.display !== 'none') {
+    const img = document.getElementById('previewImage');
+    if (img.src) {
+      const canvas = document.getElementById('annotCanvas');
+      const rect = img.getBoundingClientRect();
+      if (rect.width > 0 && app.canvasCtx) {
+        const oldData = canvas.toDataURL();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        const nImg = new Image();
+        nImg.onload = () => { app.canvasCtx.drawImage(nImg, 0, 0); };
+        nImg.src = oldData;
+      }
+    }
+  }
+});
+
+// ---- 初始化 ----
+console.log('🎯 错题猎手已加载');
+</script>
+</body>
+</html>
